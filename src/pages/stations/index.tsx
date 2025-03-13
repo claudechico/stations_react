@@ -21,10 +21,13 @@ const StationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Permission checks
-  const canCreate = hasPermission('stations:create', user);
-  const canUpdate = hasPermission('stations:update', user);
-  const canDelete = hasPermission('stations:delete', user);
+  // Permission checks based solely on the permissions returned by hasPermission
+  const canCreateStation = hasPermission('stations:create', user);
+  console.log('can create',canCreateStation);
+  const canUpdateStation = hasPermission('stations:update', user);
+  const canDeleteStation = hasPermission('stations:delete', user);
+
+  // These role checks remain for loadData logic only
   const isAdmin = user?.role?.name === 'admin';
   const isDirector = user?.role?.name === 'director';
   const isManager = user?.role?.name === 'manager';
@@ -51,7 +54,7 @@ const StationsPage = () => {
           stationsData = await stationApi.getAll();
         }
       } else if (isDirector) {
-        const userCompanies = user?.directedCompanies || [];
+        const userCompanies = user?.companies || [];
         companiesData = userCompanies;
         if (userCompanies.length > 0) {
           stationsData = await stationApi.getByCompany(userCompanies[0].id);
@@ -147,7 +150,7 @@ const StationsPage = () => {
       <div className="flex flex-col space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Station Management</h1>
-          {canCreate && (
+          {canCreateStation && (
             <button
               onClick={() => setShowAddModal(true)}
               className="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-700"
@@ -206,7 +209,7 @@ const StationsPage = () => {
             <p className="mt-1 text-sm text-gray-500">
               {searchTerm ? 'Try adjusting your search terms' : 'Get started by creating a new station'}
             </p>
-            {canCreate && !searchTerm && (
+            {canCreateStation && !searchTerm && (
               <div className="mt-6">
                 <button
                   onClick={() => setShowAddModal(true)}
@@ -224,8 +227,8 @@ const StationsPage = () => {
               <StationCard
                 key={station.id}
                 station={station}
-                canUpdate={canUpdate}
-                canDelete={canDelete}
+                canUpdate={canUpdateStation}
+                canDelete={canDeleteStation}
                 onUpdate={handleUpdateStation}
                 onDelete={handleDeleteStation}
               />

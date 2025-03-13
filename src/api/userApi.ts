@@ -1,6 +1,7 @@
 import api from './Api';
 
 export interface User {
+  companies: never[];
   id: number;
   username: string;
   email: string;
@@ -31,14 +32,17 @@ const userApi = {
   getDirectors: async (): Promise<User[]> => {
     try {
       const response = await api.get('/users');
-      console.log('Fetched users:', response.data); // Log all users
+      console.log('Fetched users:', response.data); // Log all users (includes company data)
   
-      // Filter users with director role
-      const directors = response.data.filter((user: User) => 
-        user.Role?.name.toLowerCase() === 'director'
-      );
+      // Filter users with the director role while ensuring they have companies
+      const directors = response.data
+        .filter((user: User) => user.Role?.name.toLowerCase() === 'director')
+        .map((director: User) => ({
+          ...director,
+          directedCompanies: director.companies || [], // Ensure company array exists
+        }));
   
-      console.log('Filtered directors:', directors); // Log the filtered directors
+      console.log('Filtered directors with companies:', directors); // Log directors with company info
   
       return directors;
     } catch (error: any) {
@@ -46,6 +50,7 @@ const userApi = {
       throw new Error(error.response?.data?.message || 'Failed to fetch directors');
     }
   },
+  
   
   getManagers: async (): Promise<User[]> => {
     try {
@@ -125,6 +130,26 @@ const userApi = {
       throw new Error(error.response?.data?.message || 'Failed to fetch user permissions');
     }
   },
+  getLoggedInDirector: async (): Promise<User | null> => {
+    try {
+      const response = await api.get('/users/me'); // Assuming "/users/me" fetches the logged-in user
+      const user: User = response.data;
+  
+      if (user.Role?.name.toLowerCase() !== 'director') {
+        console.warn('User is not a director');
+        return null;
+      }
+  
+      return {
+        ...user,
+        directedCompanies: user.companies || [], // Ensure companies array exists
+      };
+    } catch (error: any) {
+      console.error('Error fetching logged-in director:', error.response?.data?.message || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to fetch director details');
+    }
+  },
+  
 
   updateUserPermissions: async (
     id: number,

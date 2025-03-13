@@ -58,7 +58,10 @@ const companyApi = {
   },
 
   getLogoUrl: (id: number): string => {
-    return `${api.defaults.baseURL}/companies/${id}/logo`;
+    // Get the token from localStorage
+    const token = localStorage.getItem('token');
+    // Return the URL with the token as a query parameter
+    return `${api.defaults.baseURL}/companies/${id}/logo?token=${token}`;
   },
 
   create: async (data: CreateCompanyDto): Promise<Company> => {
@@ -76,8 +79,8 @@ const companyApi = {
 
       const response = await api.post('/companies', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+          'Content-Type': 'multipart/form-data'
+        }
       });
       return response.data;
     } catch (error: any) {
@@ -96,8 +99,8 @@ const companyApi = {
 
       const response = await api.put(`/companies/${id}`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+          'Content-Type': 'multipart/form-data'
+        }
       });
       return response.data;
     } catch (error: any) {

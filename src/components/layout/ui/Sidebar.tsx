@@ -19,7 +19,7 @@ interface MenuItem {
   title: string;
   icon: React.ElementType;
   path: string;
-  permission: string;
+  permission: string[];
 }
 
 const Sidebar: React.FC = () => {
@@ -27,53 +27,56 @@ const Sidebar: React.FC = () => {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  console.log('the user permissions is',user?.permissions);
 
   const menuItems: MenuItem[] = [
     {
       title: 'Dashboard',
       icon: LayoutDashboard,
       path: '/dashboard',
-      permission: 'dashboard:view'
+      permission: ['dashboard:view']
     },
     {
       title: 'Stations',
       icon: GaugeCircle,
       path: '/stations',
-      permission: 'stations:manage'
+      permission: ['stations:manage', 'stations:read_stations']
     },
     {
       title: 'Companies',
       icon: Building2,
       path: '/companies',
-      permission: 'companies:manage'
+      permission: ['companies:manage']
     },
     {
       title: 'Locations',
       icon: MapPin,
       path: '/locations',
-      permission: 'locations:manage'
+      permission: ['locations:manage']
     },
     {
       title: 'Users',
       icon: Users,
       path: '/users',
-      permission: 'users:manage'
+      permission: ['users:manage']
     },
     {
       title: 'Settings',
       icon: Settings,
       path: '/settings',
-      permission: 'settings:view'
+      permission: ['settings:view']
     }
   ];
 
-  const hasPermission = (permission: string): boolean => {
+  const hasPermission = (permissions: string[]): boolean => {
     if (!user?.permissions) return false;
-    const [resource, action] = permission.split(':');
-    return user.permissions.some(p => 
-      (p.resource === resource && (p.action === action || p.action === 'manage')) ||
-      (p.resource === 'admin' && p.action === 'manage')
-    );
+    return permissions.some(permission => {
+      const [resource, action] = permission.split(':');
+      return user.permissions.some(p => 
+        (p.resource === resource && (p.action === action || p.action === 'manage')) ||
+        (p.resource === 'admin' && p.action === 'manage')
+      );
+    });
   };
 
   const handleLogout = () => {
@@ -114,9 +117,7 @@ const Sidebar: React.FC = () => {
             </Link>
           )
         )}
-      </nav>
-      
-      <div className="p-4 border-t border-red-800">
+         <div className="p-4 border-t border-red-800">
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-gray-300 hover:bg-red-900/50 hover:text-white transition-colors"
@@ -125,6 +126,9 @@ const Sidebar: React.FC = () => {
           <span className="font-medium">Logout</span>
         </button>
       </div>
+      </nav>
+      
+     
     </>
   );
 

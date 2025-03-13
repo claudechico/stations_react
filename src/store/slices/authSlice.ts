@@ -19,6 +19,7 @@ export interface Role {
 }
 
 export interface User {
+  companies: never[];
   id: string;
   username: string;
   email: string;

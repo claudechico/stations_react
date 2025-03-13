@@ -101,6 +101,7 @@ const CompaniesPage = () => {
       setLogoPreview(reader.result as string);
     };
     reader.onerror = () => {
+      console.error('Error reading logo file:', reader.error);
       toast.error('Failed to read logo file');
       setSelectedLogo(null);
       setLogoPreview(null);
@@ -118,7 +119,9 @@ const CompaniesPage = () => {
     });
     
     if (company.id) {
-      setLogoPreview(companyApi.getLogoUrl(company.id));
+      const logoUrl = companyApi.getLogoUrl(company.id);
+      console.log('Setting logo preview URL:', logoUrl);
+      setLogoPreview(logoUrl);
     }
     
     setShowAddModal(true);
@@ -175,6 +178,40 @@ const CompaniesPage = () => {
       console.error('Error:', error);
       toast.error('Failed to delete company');
     }
+  };
+
+  const renderLogo = (company: Company) => {
+    if (!company.id) {
+      console.log('No company ID available for logo');
+      return (
+        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+          <Building2 className="h-6 w-6 text-gray-400" />
+        </div>
+      );
+    }
+
+    const logoUrl = companyApi.getLogoUrl(company.id);
+    console.log('Rendering logo for company:', company.id, 'URL:', logoUrl);
+
+    return (
+      <img
+        src={logoUrl}
+        alt={company.name}
+        className="h-10 w-10 rounded-full object-cover"
+        onError={(e) => {
+          // console.error('Error loading company logo:', company.id);
+          const target = e.target as HTMLImageElement;
+          target.onerror = null; // Prevent infinite loop
+          target.src = ''; // Clear the broken image
+          target.classList.add('bg-gray-200');
+          // Create and append the Building2 icon
+          const icon = document.createElement('div');
+          icon.className = 'h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center';
+          icon.innerHTML = `<svg class="h-6 w-6 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`;
+          target.parentNode?.replaceChild(icon, target);
+        }}
+      />
+    );
   };
 
   const filteredCompanies = companies.filter(company =>
@@ -260,21 +297,7 @@ const CompaniesPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        {company.id ? (
-                          <img
-                            src={companyApi.getLogoUrl(company.id)}
-                            alt={company.name}
-                            className="h-10 w-10 rounded-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'data:image/svg+xml,...';
-                              (e.target as HTMLImageElement).onerror = null;
-                            }}
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                            <Building2 className="h-6 w-6 text-gray-400" />
-                          </div>
-                        )}
+                        {renderLogo(company)}
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{company.name}</div>
@@ -355,8 +378,10 @@ const CompaniesPage = () => {
                         src={logoPreview}
                         alt="Logo preview"
                         className="h-full w-full object-cover"
-                        onError={() => {
+                        onError={(e) => {
+                          console.error('Error loading logo preview');
                           setLogoPreview(null);
+                          toast.error('Failed to load logo preview');
                         }}
                       />
                     ) : (

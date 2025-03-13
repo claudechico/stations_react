@@ -1,6 +1,7 @@
 import api from './Api';
 
 export interface Station {
+  Company: any;
   id: number;
   name: string;
   tin: string;
