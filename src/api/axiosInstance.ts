@@ -2,7 +2,7 @@
 import axios from 'axios';
 import store from '../store/slices/store';  // Make sure this path is correct
 
-const API_URL = 'http://localhost:5000/api/auth';
+const API_URL = 'http://192.168.100.34:5000/api/auth';
 
 const axiosInstance = axios.create({
   baseURL: API_URL,

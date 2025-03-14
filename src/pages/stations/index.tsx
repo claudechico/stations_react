@@ -195,6 +195,8 @@ const StationsPage = () => {
               onChange={(e) => setItemsPerPage(Number(e.target.value))}
               className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
             >
+                <option value={2}>2 per page</option>
+                <option value={4}>4 per page</option>
               <option value={5}>5 per page</option>
               <option value={10}>10 per page</option>
               <option value={20}>20 per page</option>

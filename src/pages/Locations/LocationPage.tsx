@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, X, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Search, Edit2, Trash2, X, Check, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import api, { Country, Region, City } from '../../api/locationApi';
 import { useSelector } from 'react-redux';
@@ -12,6 +12,205 @@ interface LocationData {
   countryId?: number;
   regionId?: number;
 }
+
+interface SearchableSelectProps {
+  options: { id: number; name: string; subtitle?: string }[];
+  value: number | undefined;
+  onChange: (value: number) => void;
+  placeholder: string;
+  className?: string;
+}
+
+const SearchableSelect = ({ options, value, onChange, placeholder, className }: SearchableSelectProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const filteredOptions = options.filter(option =>
+    option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    option.subtitle?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const selectedOption = options.find(opt => opt.id === value);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className={`relative ${className}`}>
+      <div
+        className="border rounded-lg px-3 py-2 flex justify-between items-center cursor-pointer bg-white"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className={`${!selectedOption ? 'text-gray-400' : ''}`}>
+          {selectedOption ? selectedOption.name : placeholder}
+        </span>
+        <ChevronDown size={20} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
+          <div className="p-2 sticky top-0 bg-white border-b">
+            <input
+              type="text"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="py-1">
+            {filteredOptions.map((option) => (
+              <div
+                key={option.id}
+                className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                onClick={() => {
+                  onChange(option.id);
+                  setIsOpen(false);
+                  setSearchTerm('');
+                }}
+              >
+                <div className="font-medium">{option.name}</div>
+                {option.subtitle && (
+                  <div className="text-sm text-gray-500">{option.subtitle}</div>
+                )}
+              </div>
+            ))}
+            {filteredOptions.length === 0 && (
+              <div className="px-3 py-2 text-gray-500">No results found</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface PaginationProps {
+  currentPage: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+}
+
+interface PaginatedData<T> {
+  items: T[];
+  currentPage: number;
+  totalItems: number;
+  pageSize: number;
+}
+
+const Pagination = ({ currentPage, totalItems, pageSize, onPageChange, onPageSizeChange }: PaginationProps) => {
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const pageSizeOptions = [10, 20, 50, 100];
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push(-1); // Separator
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push(-1); // Separator
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push(-1); // Separator
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push(-1); // Separator
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+
+  return (
+    <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+      <div className="flex items-center">
+        <span className="text-sm text-gray-700 mr-2">Show</span>
+        <select
+          value={pageSize}
+          onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          className="border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
+          {pageSizeOptions.map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+        <span className="text-sm text-gray-700 ml-2">entries</span>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <p className="text-sm text-gray-700">
+          Showing {Math.min((currentPage - 1) * pageSize + 1, totalItems)} to{' '}
+          {Math.min(currentPage * pageSize, totalItems)} of {totalItems} results
+        </p>
+
+        <nav className="flex items-center space-x-1">
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`p-2 rounded-md ${
+              currentPage === 1
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          {getPageNumbers().map((pageNum, idx) => (
+            pageNum === -1 ? (
+              <span key={`separator-${idx}`} className="px-3 py-2">...</span>
+            ) : (
+              <button
+                key={pageNum}
+                onClick={() => onPageChange(pageNum)}
+                className={`px-3 py-2 rounded-md ${
+                  currentPage === pageNum
+                    ? 'bg-red-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {pageNum}
+              </button>
+            )
+          ))}
+
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`p-2 rounded-md ${
+              currentPage === totalPages
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <ChevronRight size={20} />
+          </button>
+        </nav>
+      </div>
+    </div>
+  );
+};
 
 const LocationPage = () => {
   const user = useSelector(selectUser);
@@ -32,6 +231,11 @@ const LocationPage = () => {
     code: '',
     countryId: undefined,
     regionId: undefined,
+  });
+  const [pagination, setPagination] = useState({
+    country: { currentPage: 1, pageSize: 10 },
+    region: { currentPage: 1, pageSize: 10 },
+    city: { currentPage: 1, pageSize: 10 }
   });
 
   useEffect(() => {
@@ -179,11 +383,34 @@ const LocationPage = () => {
     return region ? region.name : 'Unknown';
   };
 
+  const paginateData = <T extends any>(
+    data: T[],
+    currentPage: number,
+    pageSize: number
+  ): PaginatedData<T> => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return {
+      items: data.slice(startIndex, endIndex),
+      currentPage,
+      totalItems: data.length,
+      pageSize
+    };
+  };
+
   const renderTable = (type: 'country' | 'region' | 'city', data: LocationData[]) => {
+    const paginationState = pagination[type];
+    const paginatedData = paginateData(data, paginationState.currentPage, paginationState.pageSize);
+
+    const getDisplayName = (t: string) => {
+      if (t === 'city') return 'Street';
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    };
+
     return (
       <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-black text-white">
-          <h2 className="text-xl font-semibold capitalize">{type}s</h2>
+          <h2 className="text-xl font-semibold capitalize">{getDisplayName(type)}s</h2>
           <button
             onClick={() => {
               setAddingType(type);
@@ -192,7 +419,7 @@ const LocationPage = () => {
             className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors"
           >
             <Plus size={20} />
-            Add {type}
+            Add {getDisplayName(type)}
           </button>
         </div>
         <div className="overflow-x-auto">
@@ -223,7 +450,7 @@ const LocationPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {data.map((item) => (
+              {paginatedData.items.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     {editingItem?.id === item.id ? (
@@ -265,23 +492,22 @@ const LocationPage = () => {
                   {type === 'region' && (
                     <td className="px-6 py-4 whitespace-nowrap">
                       {editingItem?.id === item.id ? (
-                        <select
+                        <SearchableSelect
+                          options={countries.map(country => ({
+                            id: country.id,
+                            name: country.name,
+                            subtitle: country.code
+                          }))}
                           value={editingItem.data.countryId}
-                          onChange={(e) =>
+                          onChange={(value) =>
                             setEditingItem({
                               ...editingItem,
-                              data: { ...editingItem.data, countryId: Number(e.target.value) },
+                              data: { ...editingItem.data, countryId: value },
                             })
                           }
-                          className="border rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        >
-                          <option value="">Select Country</option>
-                          {countries.map((country) => (
-                            <option key={country.id} value={country.id}>
-                              {country.name}
-                            </option>
-                          ))}
-                        </select>
+                          placeholder="Select Country"
+                          className="w-full"
+                        />
                       ) : (
                         <div className="text-sm text-gray-500">
                           {item.countryId ? getCountryName(item.countryId) : 'N/A'}
@@ -292,23 +518,22 @@ const LocationPage = () => {
                   {type === 'city' && (
                     <td className="px-6 py-4 whitespace-nowrap">
                       {editingItem?.id === item.id ? (
-                        <select
+                        <SearchableSelect
+                          options={regions.map(region => ({
+                            id: region.id,
+                            name: region.name,
+                            subtitle: getCountryName(region.countryId)
+                          }))}
                           value={editingItem.data.regionId}
-                          onChange={(e) =>
+                          onChange={(value) =>
                             setEditingItem({
                               ...editingItem,
-                              data: { ...editingItem.data, regionId: Number(e.target.value) },
+                              data: { ...editingItem.data, regionId: value },
                             })
                           }
-                          className="border rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                        >
-                          <option value="">Select Region</option>
-                          {regions.map((region) => (
-                            <option key={region.id} value={region.id}>
-                              {region.name}
-                            </option>
-                          ))}
-                        </select>
+                          placeholder="Select Region"
+                          className="w-full"
+                        />
                       ) : (
                         <div className="text-sm text-gray-500">
                           {item.regionId ? getRegionName(item.regionId) : 'N/A'}
@@ -356,6 +581,19 @@ const LocationPage = () => {
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={paginationState.currentPage}
+          totalItems={paginatedData.totalItems}
+          pageSize={paginationState.pageSize}
+          onPageChange={(page) => setPagination(prev => ({
+            ...prev,
+            [type]: { ...prev[type], currentPage: page }
+          }))}
+          onPageSizeChange={(size) => setPagination(prev => ({
+            ...prev,
+            [type]: { currentPage: 1, pageSize: size }
+          }))}
+        />
       </div>
     );
   };
@@ -402,7 +640,7 @@ const LocationPage = () => {
     <div className="bg-white rounded-lg p-6 w-full max-w-md">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-black">
-          {addingType === 'city' ? 'Add New Street' : `Add New ${addingType?.charAt(0).toUpperCase() + addingType?.slice(1)}`}
+          Add New {addingType === 'city' ? 'Street' : addingType?.charAt(0).toUpperCase() + addingType?.slice(1)}
         </h2>
         <button
           onClick={() => {
@@ -446,36 +684,34 @@ const LocationPage = () => {
         {addingType === 'region' && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-            <select
+            <SearchableSelect
+              options={countries.map(country => ({
+                id: country.id,
+                name: country.name,
+                subtitle: country.code
+              }))}
               value={addForm.countryId}
-              onChange={(e) => setAddForm({ ...addForm, countryId: Number(e.target.value) })}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-            >
-              <option value="">Select Country</option>
-              {countries.map((country) => (
-                <option key={country.id} value={country.id}>
-                  {country.name}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setAddForm({ ...addForm, countryId: value })}
+              placeholder="Select Country"
+              className="w-full"
+            />
           </div>
         )}
 
         {addingType === 'city' && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Select Region</label>
-            <select
+            <SearchableSelect
+              options={regions.map(region => ({
+                id: region.id,
+                name: region.name,
+                subtitle: getCountryName(region.countryId)
+              }))}
               value={addForm.regionId}
-              onChange={(e) => setAddForm({ ...addForm, regionId: Number(e.target.value) })}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-            >
-              <option value="">Select Region</option>
-              {regions.map((region) => (
-                <option key={region.id} value={region.id}>
-                  {region.name} ({getCountryName(region.countryId)})
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setAddForm({ ...addForm, regionId: value })}
+              placeholder="Select Region"
+              className="w-full"
+            />
           </div>
         )}
 
@@ -483,7 +719,7 @@ const LocationPage = () => {
   onClick={handleAdd}
   className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors"
 >
-  Add Street
+  Add {addingType === 'city' ? 'Street' : addingType?.charAt(0).toUpperCase() + addingType?.slice(1)}
 </button>
 
       </div>

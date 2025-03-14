@@ -341,9 +341,9 @@ const CompaniesPage = () => {
       </div>
 
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-xl font-semibold mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full m-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-semibold mb-4">
               {editingId ? 'Edit Company' : 'Add New Company'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -353,7 +353,7 @@ const CompaniesPage = () => {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:ring-red-500"
                   required
                 />
               </div>
@@ -364,7 +364,7 @@ const CompaniesPage = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:ring-red-500"
                   required
                 />
               </div>
@@ -450,7 +450,7 @@ const CompaniesPage = () => {
                       <div className="sticky top-0 z-10 bg-white px-2 py-1.5">
                         <input
                           type="text"
-                          className="w-full border rounded px-2 py-1"
+                          className="w-full border rounded px-3 py-2 text-gray-900"
                           placeholder="Search countries..."
                           value={countrySearch}
                           onChange={(e) => setCountrySearch(e.target.value)}
@@ -502,7 +502,7 @@ const CompaniesPage = () => {
                           <div className="sticky top-0 z-10 bg-white px-2 py-1.5">
                             <input
                               type="text"
-                              className="w-full border rounded px-2 py-1"
+                              className="w-full border rounded px-3 py-2 text-gray-900"
                               placeholder="Search directors..."
                               value={directorSearch}
                               onChange={(e) => setDirectorSearch(e.target.value)}
@@ -541,7 +541,7 @@ const CompaniesPage = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-4 mt-6">
+              <div className="flex justify-end gap-3 mt-4">
                 <button
                   type="button"
                   onClick={() => {
@@ -551,13 +551,13 @@ const CompaniesPage = () => {
                     setSelectedLogo(null);
                     setLogoPreview(null);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+                  className="px-3 py-1 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
                 >
                   {editingId ? 'Update' : 'Create'}
                 </button>

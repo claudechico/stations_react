@@ -1,7 +1,7 @@
 import axios from 'axios';
 import store from '../store/slices/store';
 
-const API_URL = 'http://localhost:5000/location/location/';
+const API_URL = 'http://192.168.100.34:5000/location/location/';
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
