@@ -28,8 +28,10 @@ const StationCard: React.FC<StationCardProps> = ({
     tin: station.tin,
     domainUrl: station.domainUrl,
     street: station.street,
-    managerId: station.managerId
+    managerId: station.managerId || null
   });
+  const Region_loaded=station.City?.Region.name;
+  console.log('the region loaded is',Region_loaded)
   const [loading, setLoading] = useState(false);
   const [availableManagers, setAvailableManagers] = useState<any[]>([]);
   const [managerSearch, setManagerSearch] = useState('');
@@ -39,7 +41,7 @@ const StationCard: React.FC<StationCardProps> = ({
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [stationsData, setStationsData] = useState(null);
-
+console.log('the stations is',station);
   // Add this new state near the other state declarations
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -89,7 +91,7 @@ const StationCard: React.FC<StationCardProps> = ({
       tin: station.tin,
       domainUrl: station.domainUrl,
       street: station.street,
-      managerId: station.managerId
+      managerId: station.managerId || null
     });
     setIsEditing(false);
   };
@@ -177,6 +179,15 @@ const StationCard: React.FC<StationCardProps> = ({
     };
   }, [isSearchOpen]);
 
+  const handleManagerSelect = (manager: any) => {
+    setEditData(prev => ({
+      ...prev,
+      managerId: manager.id
+    }));
+    setManagerSearch(`${manager.firstName} ${manager.lastName}`);
+    setIsSearchOpen(false);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 p-1">
       {/* Image section remains on top */}
@@ -231,214 +242,146 @@ const StationCard: React.FC<StationCardProps> = ({
       </div>
 
       {/* Text content in a two-column grid */}
-      <div className="p-1 grid grid-cols-2 gap-x-1 gap-y-1 text-xs text-gray-600">
-        {/* Row 1: Station name & TIN + edit/delete icons (spans both columns) */}
-        <div className="col-span-2 flex justify-between items-start mb-0.5">
-          <div>
-            {isEditing ? (
+      <div className="p-1 grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+        {/* Left Column */}
+        <div>
+          {isEditing ? (
+            <div>
+              <label className="font-medium">Branch:</label>
               <input
                 type="text"
                 value={editData.name}
                 onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                className="w-full px-1 py-0.5 border rounded focus:ring-2 focus:ring-red-500 text-xs font-semibold"
+                className="w-full px-1 py-0.5 border rounded focus:ring-2 focus:ring-red-500 text-xs"
                 placeholder="Station Name"
               />
-            ) : (
-              <h3 className="text-xs font-semibold text-gray-900">{station.name}</h3>
-            )}
-            <div className="mt-0.5">
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editData.tin}
-                  onChange={(e) => setEditData({ ...editData, tin: e.target.value })}
-                  className="w-full px-1 py-0.5 border rounded focus:ring-2 focus:ring-red-500 text-xs"
-                  placeholder="TIN Number"
-                />
-              ) : (
-                <p className="text-xs text-gray-500">TIN: {station.tin}</p>
+            </div>
+          ) : (
+            <div>
+              <span className="font-medium">Branch:</span>
+              <span className="ml-1">{station.name}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column */}
+        <div>
+          {isEditing ? (
+            <div>
+              <label className="font-medium">Location:</label>
+              <input
+                type="text"
+                value={editData.street}
+                onChange={(e) => setEditData({ ...editData, street: e.target.value })}
+                className="w-full px-1 py-0.5 border rounded focus:ring-2 focus:ring-red-500 text-xs"
+                placeholder="Street Address"
+              />
+            </div>
+          ) : (
+            <div>
+              <span className="font-medium">Location:</span>
+              <span className="ml-1">{`${Region_loaded}`}</span>
+
+            </div>
+          )}
+        </div>
+
+        {/* Left Column */}
+        <div>
+          <span className="font-medium">TIN:</span>
+          <span className="ml-1">{station.tin}</span>
+        </div>
+
+        {/* Right Column - View Stations Button */}
+        <div className="col-span-2">
+          <button
+            onClick={() => window.open(station.domainUrl, '_blank')}
+            className="mt-1 text-white bg-red-600 hover:bg-red-700 px-2 py-1 rounded"
+          >
+            View Stations
+          </button>
+        </div>
+
+        {/* Manager Selection - Only visible in edit mode */}
+        {isEditing && (
+          <div className="col-span-2 mt-1">
+            <label className="font-medium block mb-1">Manager:</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={managerSearch}
+                onChange={handleSearchChange}
+                onFocus={() => setIsSearchOpen(true)}
+                className="w-full px-1 py-0.5 border rounded focus:ring-2 focus:ring-red-500 text-xs"
+                placeholder="Search for manager..."
+              />
+              {isSearchOpen && filteredManagers.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                  {filteredManagers.map((manager) => (
+                    <div
+                      key={manager.id}
+                      className={cn(
+                        'px-2 py-1 cursor-pointer hover:bg-gray-100 text-xs',
+                        editData.managerId === manager.id && 'bg-gray-100'
+                      )}
+                      onClick={() => handleManagerSelect(manager)}
+                    >
+                      {`${manager.username}(${manager.email})`}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
+            {/* Show selected manager */}
+            {editData.managerId && !isSearchOpen && (
+              <div className="mt-1 text-xs text-gray-600">
+                Selected: {availableManagers.find(m => m.id === editData.managerId)?.firstName} {availableManagers.find(m => m.id === editData.managerId)?.lastName}
+              </div>
+            )}
           </div>
+        )}
 
-          <div className="flex gap-1">
-            {isEditing ? (
-              <>
+        {/* Action buttons */}
+        <div className="col-span-2 flex justify-end gap-1 mt-1">
+          {isEditing ? (
+            <>
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className={cn(
+                  'text-green-600 hover:text-green-800 transition-colors',
+                  loading && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                <Check size={14} />
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={loading}
+                className="text-red-600 hover:text-red-800 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            </>
+          ) : (
+            <>
+              {canUpdate && (
                 <button
-                  onClick={handleSave}
-                  disabled={loading}
-                  className={cn(
-                    'text-green-600 hover:text-green-800 transition-colors',
-                    loading && 'opacity-50 cursor-not-allowed'
-                  )}
+                  onClick={() => setIsEditing(true)}
+                  className="text-blue-600 hover:text-blue-800 transition-colors"
                 >
-                  <Check size={14} />
+                  <Edit2 size={14} />
                 </button>
+              )}
+              {canDelete && (
                 <button
-                  onClick={handleCancel}
-                  disabled={loading}
+                  onClick={() => onDelete(station.id)}
                   className="text-red-600 hover:text-red-800 transition-colors"
                 >
-                  <X size={14} />
+                  <Trash2 size={14} />
                 </button>
-              </>
-            ) : (
-              <>
-                {canUpdate && (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="text-blue-600 hover:text-blue-800 transition-colors"
-                  >
-                    <Edit2 size={14} />
-                  </button>
-                )}
-                {canDelete && (
-                  <button
-                    onClick={() => onDelete(station.id)}
-                    className="text-red-600 hover:text-red-800 transition-colors"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Row 2: Location (left), Manager (right) */}
-        <div>
-          <span className="font-medium text-xs">Location:</span>
-          {isEditing ? (
-            <input
-              type="text"
-              value={editData.street}
-              onChange={(e) => setEditData({ ...editData, street: e.target.value })}
-              className="w-full mt-1 px-1 py-0.5 border rounded focus:ring-2 focus:ring-red-500 text-xs"
-              placeholder="Street Address"
-            />
-          ) : (
-            <p className="mt-1 text-xs">
-              {station.street}
-              {station.city?.name && (
-                <>
-                  <br />
-                  {station.city.name}
-                  {station.city.region?.name && `, ${station.city.region.name}`}
-                  {station.city.region?.country?.name && `, ${station.city.region.country.name}`}
-                </>
               )}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <span className="font-medium text-xs">Manager:</span>
-          {isEditing ? (
-            <div className="mt-1 relative">
-              <form onSubmit={(e) => e.preventDefault()} className="space-y-1">
-                {/* Initial dropdown that triggers the search form */}
-                <div 
-                  onClick={() => setIsSearchOpen(true)} 
-                  className={cn(
-                    "w-full px-2 py-1 border rounded cursor-pointer hover:border-gray-400 text-xs",
-                    !isSearchOpen && "bg-white"
-                  )}
-                >
-                  {editData.managerId ? 
-                    availableManagers.find(m => m.id === editData.managerId)?.username || 'Select a manager' : 
-                    'Select a manager'}
-                </div>
-
-                {/* Search form that appears after clicking the dropdown */}
-                {isSearchOpen && (
-                  <div className="absolute top-0 left-0 w-full bg-white border rounded shadow-lg z-10">
-                    <div className="relative p-1">
-                      <input
-                        type="text"
-                        placeholder="Search managers..."
-                        value={managerSearch}
-                        onChange={handleSearchChange}
-                        onFocus={() => setIsSearchFocused(true)}
-                        className="w-full px-2 py-1 border rounded focus:ring-2 focus:ring-red-500 text-xs"
-                        autoFocus
-                      />
-                      {managerSearch && (
-                        <button
-                          type="button"
-                          onClick={() => setManagerSearch('')}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                          <X size={12} />
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="max-h-48 overflow-y-auto p-1">
-                      {filteredManagers.length > 0 ? (
-                        filteredManagers.map((manager) => (
-                          <div
-                            key={manager.id}
-                            onClick={() => {
-                              setEditData({
-                                ...editData,
-                                managerId: manager.id
-                              });
-                              setIsSearchOpen(false);
-                              setManagerSearch('');
-                            }}
-                            className="px-2 py-1 hover:bg-gray-100 cursor-pointer rounded text-xs"
-                          >
-                            <div className="font-medium">{manager.username}</div>
-                            <div className="text-gray-500">{manager.email}</div>
-                            {manager.department && (
-                              <div className="text-gray-400">{manager.department}</div>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="px-2 py-1 text-gray-500 text-xs">
-                          No available managers found
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </form>
-            </div>
-          ) : station.manager ? (
-            <div className="flex flex-col mt-1">
-              <span className="text-gray-900 font-medium text-xs">{station.manager.username}</span>
-              <span className="text-gray-500 text-xs">{station.manager.email}</span>
-            </div>
-          ) : (
-            <span className="text-gray-500 italic text-xs">No manager assigned</span>
-          )}
-        </div>
-
-        {/* Row 3: Domain (spans both columns) */}
-        <div className="col-span-2">
-          <span className="font-medium text-xs">Domain:</span>
-          {isEditing ? (
-            <input
-              type="url"
-              value={editData.domainUrl}
-              onChange={(e) => setEditData({ ...editData, domainUrl: e.target.value })}
-              className="w-full mt-1 px-1 py-0.5 border rounded focus:ring-2 focus:ring-red-500 text-xs"
-              placeholder="Domain URL"
-            />
-          ) : station.domainUrl ? (
-            <a
-              href={station.domainUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-1 text-xs"
-            >
-              Visit Site <ExternalLink size={10} />
-            </a>
-          ) : (
-            <span className="text-gray-500 italic text-xs mt-1 block">
-              No domain URL provided
-            </span>
+            </>
           )}
         </div>
       </div>
